@@ -10,53 +10,53 @@ img_w = 2048
 img_h = 2048
 n_labels = 2
 
-def create_model(kernel = 3):
+def create_model(kernel = 3, f=2):
     encoding_layers = [
-        Convolution2D(1, (7,7), padding='same', input_shape=(img_h, img_w, 1)),
+        Convolution2D(f, (7,7), padding='same', input_shape=(img_h, img_w, 1)),
         BatchNormalization(),
         Activation('relu'),
-        Convolution2D(1, (7,7), padding='same'),
+        Convolution2D(f, (7,7), padding='same'),
         BatchNormalization(),
         Activation('relu'),
         MaxPooling2D(pool_size=(4, 4)), #512
 
-        Convolution2D(4, (5,5), padding='same'),
+        Convolution2D(4*f, (5,5), padding='same'),
         BatchNormalization(),
         Activation('relu'),
-        Convolution2D(4, (5,5), padding='same'),
+        Convolution2D(4*f, (5,5), padding='same'),
         BatchNormalization(),
         Activation('relu'),
         MaxPooling2D(pool_size=(4, 4)), #128
 
-        Convolution2D(16, (kernel, kernel), padding='same'),
+        Convolution2D(16*f, (kernel, kernel), padding='same'),
         BatchNormalization(),
         Activation('relu'),
-        Convolution2D(16, (kernel, kernel), padding='same'),
+        Convolution2D(16*f, (kernel, kernel), padding='same'),
         BatchNormalization(),
         Activation('relu'),
-        Convolution2D(16, (kernel, kernel), padding='same'),
+        Convolution2D(16*f, (kernel, kernel), padding='same'),
         BatchNormalization(),
         Activation('relu'),
         MaxPooling2D(), #64
 
-        Convolution2D(32, (kernel, kernel), padding='same'),
+        Convolution2D(32*f, (kernel, kernel), padding='same'),
         BatchNormalization(),
         Activation('relu'),
-        Convolution2D(32, (kernel, kernel), padding='same'),
+        Convolution2D(32*f, (kernel, kernel), padding='same'),
         BatchNormalization(),
         Activation('relu'),
-        Convolution2D(32, (kernel, kernel), padding='same'),
+        Convolution2D(32*f, (kernel, kernel), padding='same'),
         BatchNormalization(),
         Activation('relu'),
         MaxPooling2D(), #32
 
-        Convolution2D(32, (kernel, kernel), padding='same'),
+        Convolution2D(32*f, (kernel, kernel), padding='same'),
         BatchNormalization(),
         Activation('relu'),
-        Convolution2D(32, (kernel, kernel), padding='same'),
+        Convolution2D(32*f, (kernel, kernel), padding='same'),
         BatchNormalization(),
         Activation('relu'),
-        Convolution2D(32, (kernel, kernel), padding='same'),
+        Convolution2D(32*f, (kernel, kernel), padding='same'),
         BatchNormalization(),
         Activation('relu'),
         MaxPooling2D(), #16
@@ -69,48 +69,48 @@ def create_model(kernel = 3):
 
     decoding_layers = [
         UpSampling2D(), #32
-        Convolution2D(32, (kernel, kernel), padding='same'),
+        Convolution2D(32*f, (kernel, kernel), padding='same'),
         BatchNormalization(),
         Activation('relu'),
-        Convolution2D(32, (kernel, kernel), padding='same'),
+        Convolution2D(32*f, (kernel, kernel), padding='same'),
         BatchNormalization(),
         Activation('relu'),
-        Convolution2D(32, (kernel, kernel), padding='same'),
+        Convolution2D(32*f, (kernel, kernel), padding='same'),
         BatchNormalization(),
         Activation('relu'),
 
         UpSampling2D(), #64
-        Convolution2D(32, (kernel, kernel), padding='same'),
+        Convolution2D(32*f, (kernel, kernel), padding='same'),
         BatchNormalization(),
         Activation('relu'),
-        Convolution2D(32, (kernel, kernel), padding='same'),
+        Convolution2D(32*f, (kernel, kernel), padding='same'),
         BatchNormalization(),
         Activation('relu'),
-        Convolution2D(32, (kernel, kernel), padding='same'),
+        Convolution2D(32*f, (kernel, kernel), padding='same'),
         BatchNormalization(),
         Activation('relu'),
 
         UpSampling2D(), #128
-        Convolution2D(16, (kernel, kernel), padding='same'),
+        Convolution2D(16*f, (kernel, kernel), padding='same'),
         BatchNormalization(),
         Activation('relu'),
-        Convolution2D(16, (kernel, kernel), padding='same'),
+        Convolution2D(16*f, (kernel, kernel), padding='same'),
         BatchNormalization(),
         Activation('relu'),
-        Convolution2D(16, (kernel, kernel), padding='same'),
+        Convolution2D(16*f, (kernel, kernel), padding='same'),
         BatchNormalization(),
         Activation('relu'),
 
         UpSampling2D(size=(4,4)), #512
-        Convolution2D(4, (5,5), padding='same'),
+        Convolution2D(4*f, (5,5), padding='same'),
         BatchNormalization(),
         Activation('relu'),
-        Convolution2D(4, (5,5), padding='same'),
+        Convolution2D(4*f, (5,5), padding='same'),
         BatchNormalization(),
         Activation('relu'),
 
         UpSampling2D(size=(4,4)),  #2048
-        Convolution2D(1, (7,7), padding='same'),
+        Convolution2D(f, (7,7), padding='same'),
         BatchNormalization(),
         Activation('relu'),
         Convolution2D(n_labels, (1, 1), padding='valid'),
@@ -131,17 +131,6 @@ def create_model(kernel = 3):
     return autoencoder
 
 
-def convert_input_keras():
-    xtr = np.zeros((396,2048,2048,1))
-    beginindex = endindex = 0
-    for i in xrange(5):
-        x = np.load('./filtered_image_data_{0}.npz'.format(i+1))
-        endindex += x['data'].shape[0]
-        xtr[beginindex:endindex] = x['data'].reshape(-1,2048,2048,1)
-#        np.savez_compressed('./filtered_image_data_keras_{0}'.format(i+1), data=xtr[beginindex:endindex])
-        beginindex = endindex
-    return xtr
-
 def convert_output_keras():
     y = np.load('./thresholded_image_data.npz')
     a = y['data'].reshape(396,2048*2048)
@@ -155,18 +144,25 @@ def convert_output_keras():
     return ytr
 
 
-xdata = np.load('./filtered_image_data_1.npz')['data'].astype('float16').reshape(-1,2048,2048,1)
-ydata = np.load('./thresholded_image_data_keras_int8.npz')['data'][:80]
+xdata = np.load('./filtered_image_data_keras_1.npz')['data'] #80
+xdata = np.concatenate((xdata, np.load('./filtered_image_data_keras_2.npz')['data'])) #160
+#==============================================================================
+# xdata = np.concatenate((xdata, np.load('./filtered_image_data_keras_3.npz')['data'])) #240
+# xdata = np.concatenate((xdata, np.load('./filtered_image_data_keras_4.npz')['data'])) #320
+# xdata = np.concatenate((xdata, np.load('./filtered_image_data_keras_5.npz')['data'])) #396
+#==============================================================================
+ydata = np.load('./thresholded_image_data_keras_int8.npz')['data'][:160] #Number of ydata must match number of xdata
+split = 120 #use this many for training
+mbs = 2 #batch size
+epochs = 1
 
-segnet = create_model()
+segnet = create_model(f=2)
 optimizer = SGD(lr=0.001, momentum=0.9, decay=0.0005, nesterov=False)
 segnet.compile(loss="categorical_crossentropy", optimizer=optimizer, metrics=['accuracy'])
 print 'Compiled: OK'
-split = 60 #use this many for training. Must be <= 396
-epochs = 3
 
 # # Train model or load weights
-history = segnet.fit(xdata[:split],ydata[:split], batch_size=1, epochs=epochs, verbose=1)
+history = segnet.fit(xdata[:split],ydata[:split], batch_size=mbs, epochs=epochs, verbose=1)
 segnet.save('ep{0}.h5'.format(epochs))
 # autoencoder.load_weights('model_5l_weight_ep50.hdf5')
 
@@ -177,18 +173,12 @@ segnet.save('ep{0}.h5'.format(epochs))
 #==============================================================================
 
 # # Test model
-score = segnet.evaluate(xdata[split:],ydata[split:], batch_size=1, verbose=1)
+score = segnet.evaluate(xdata[split:],ydata[split:], batch_size=mbs, verbose=1)
 print 'Test score:', score[0]
 print 'Test accuracy:', score[1]
 
-output = segnet.predict_proba(xdata[split:], batch_size=1, verbose=1)
+output = segnet.predict_proba(xdata[split:], batch_size=mbs, verbose=1)
 output = output.reshape((output.shape[0], img_h, img_w, n_labels))
-
-
-
-
-
-
 
 
 
