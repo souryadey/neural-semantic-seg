@@ -155,15 +155,14 @@ def convert_output_keras():
     return ytr
 
 
-xdata = convert_input_keras()
-ydata = np.load('./thresholded_image_data_keras.npz')
-ydata = ydata['data']
+xdata = convert_input_keras().astype('float32')
+ydata = np.load('./thresholded_image_data_keras_int8.npz')['data']
 
 segnet = create_model()
 optimizer = SGD(lr=0.001, momentum=0.9, decay=0.0005, nesterov=False)
 segnet.compile(loss="categorical_crossentropy", optimizer=optimizer, metrics=['accuracy'])
 print 'Compiled: OK'
-split = 300
+split = 300 #use this many for training. Must be <= 396
 epochs = 1
 
 # # Train model or load weights
