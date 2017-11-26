@@ -146,24 +146,26 @@ def convert_output_keras():
 
 xdata = np.load('./filtered_image_data_keras_1.npz')['data'] #80
 xdata = np.concatenate((xdata, np.load('./filtered_image_data_keras_2.npz')['data'])) #160
-#==============================================================================
-# xdata = np.concatenate((xdata, np.load('./filtered_image_data_keras_3.npz')['data'])) #240
-# xdata = np.concatenate((xdata, np.load('./filtered_image_data_keras_4.npz')['data'])) #320
-# xdata = np.concatenate((xdata, np.load('./filtered_image_data_keras_5.npz')['data'])) #396
-#==============================================================================
-ydata = np.load('./thresholded_image_data_keras_int8.npz')['data'][:160] #Number of ydata must match number of xdata
-split = 120 #use this many for training
+xdata = np.concatenate((xdata, np.load('./filtered_image_data_keras_3.npz')['data'])) #240
+xdata = np.concatenate((xdata, np.load('./filtered_image_data_keras_4.npz')['data'])) #320
+xdata = np.concatenate((xdata, np.load('./filtered_image_data_keras_5.npz')['data'])) #396
+ydata = np.load('./thresholded_image_data_keras_int8.npz')['data'][:396] #Number of ydata must match number of xdata
+split = 296 #use this many for training
 mbs = 2 #batch size
-epochs = 1
+#epochs = 10
 
-segnet = create_model(f=2)
-optimizer = SGD(lr=0.001, momentum=0.9, decay=0.0005, nesterov=False)
+segnet = create_model(f=4)
+optimizer = SGD(lr=0.01, momentum=0.9, decay=0.002, nesterov=True)
 segnet.compile(loss="categorical_crossentropy", optimizer=optimizer, metrics=['accuracy'])
 print 'Compiled: OK'
 
 # # Train model or load weights
-history = segnet.fit(xdata[:split],ydata[:split], batch_size=mbs, epochs=epochs, verbose=1)
-segnet.save('ep{0}.h5'.format(epochs))
+for i in xrange(10):
+    history = segnet.fit(xdata[:split],ydata[:split], batch_size=mbs, epochs=5, verbose=0)
+    score = segnet.evaluate(xdata[split:],ydata[split:], batch_size=mbs, verbose=1)
+    print 'Test loss:', score[0]
+    print 'Test accuracy:', score[1]
+    segnet.save('ep{0}_final.h5'.format((i+1)*5))
 # autoencoder.load_weights('model_5l_weight_ep50.hdf5')
 
 # # Model visualization
@@ -173,12 +175,16 @@ segnet.save('ep{0}.h5'.format(epochs))
 #==============================================================================
 
 # # Test model
-score = segnet.evaluate(xdata[split:],ydata[split:], batch_size=mbs, verbose=1)
-print 'Test score:', score[0]
-print 'Test accuracy:', score[1]
+#==============================================================================
+# score = segnet.evaluate(xdata[split:],ydata[split:], batch_size=mbs, verbose=1)
+# print 'Test score:', score[0]
+# print 'Test accuracy:', score[1]
+#==============================================================================
 
-output = segnet.predict_proba(xdata[split:], batch_size=mbs, verbose=1)
-output = output.reshape((output.shape[0], img_h, img_w, n_labels))
+#==============================================================================
+# output = segnet.predict_proba(xdata[split:], batch_size=mbs, verbose=1)
+# output = output.reshape((output.shape[0], img_h, img_w, n_labels))
+#==============================================================================
 
 
 
