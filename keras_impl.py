@@ -12,51 +12,51 @@ n_labels = 2
 
 def create_model(kernel = 3):
     encoding_layers = [
-        Convolution2D(4, (7,7), padding='same', input_shape=(img_h, img_w, 1)),
+        Convolution2D(1, (7,7), padding='same', input_shape=(img_h, img_w, 1)),
         BatchNormalization(),
         Activation('relu'),
-        Convolution2D(4, (7,7), padding='same'),
+        Convolution2D(1, (7,7), padding='same'),
         BatchNormalization(),
         Activation('relu'),
         MaxPooling2D(pool_size=(4, 4)), #512
 
-        Convolution2D(16, (5,5), padding='same'),
+        Convolution2D(4, (5,5), padding='same'),
         BatchNormalization(),
         Activation('relu'),
-        Convolution2D(16, (5,5), padding='same'),
+        Convolution2D(4, (5,5), padding='same'),
         BatchNormalization(),
         Activation('relu'),
         MaxPooling2D(pool_size=(4, 4)), #128
 
-        Convolution2D(64, (kernel, kernel), padding='same'),
+        Convolution2D(16, (kernel, kernel), padding='same'),
         BatchNormalization(),
         Activation('relu'),
-        Convolution2D(64, (kernel, kernel), padding='same'),
+        Convolution2D(16, (kernel, kernel), padding='same'),
         BatchNormalization(),
         Activation('relu'),
-        Convolution2D(64, (kernel, kernel), padding='same'),
+        Convolution2D(16, (kernel, kernel), padding='same'),
         BatchNormalization(),
         Activation('relu'),
         MaxPooling2D(), #64
 
-        Convolution2D(128, (kernel, kernel), padding='same'),
+        Convolution2D(32, (kernel, kernel), padding='same'),
         BatchNormalization(),
         Activation('relu'),
-        Convolution2D(128, (kernel, kernel), padding='same'),
+        Convolution2D(32, (kernel, kernel), padding='same'),
         BatchNormalization(),
         Activation('relu'),
-        Convolution2D(128, (kernel, kernel), padding='same'),
+        Convolution2D(32, (kernel, kernel), padding='same'),
         BatchNormalization(),
         Activation('relu'),
         MaxPooling2D(), #32
 
-        Convolution2D(128, (kernel, kernel), padding='same'),
+        Convolution2D(32, (kernel, kernel), padding='same'),
         BatchNormalization(),
         Activation('relu'),
-        Convolution2D(128, (kernel, kernel), padding='same'),
+        Convolution2D(32, (kernel, kernel), padding='same'),
         BatchNormalization(),
         Activation('relu'),
-        Convolution2D(128, (kernel, kernel), padding='same'),
+        Convolution2D(32, (kernel, kernel), padding='same'),
         BatchNormalization(),
         Activation('relu'),
         MaxPooling2D(), #16
@@ -69,48 +69,48 @@ def create_model(kernel = 3):
 
     decoding_layers = [
         UpSampling2D(), #32
-        Convolution2D(128, (kernel, kernel), padding='same'),
+        Convolution2D(32, (kernel, kernel), padding='same'),
         BatchNormalization(),
         Activation('relu'),
-        Convolution2D(128, (kernel, kernel), padding='same'),
+        Convolution2D(32, (kernel, kernel), padding='same'),
         BatchNormalization(),
         Activation('relu'),
-        Convolution2D(128, (kernel, kernel), padding='same'),
+        Convolution2D(32, (kernel, kernel), padding='same'),
         BatchNormalization(),
         Activation('relu'),
 
         UpSampling2D(), #64
-        Convolution2D(128, (kernel, kernel), padding='same'),
+        Convolution2D(32, (kernel, kernel), padding='same'),
         BatchNormalization(),
         Activation('relu'),
-        Convolution2D(128, (kernel, kernel), padding='same'),
+        Convolution2D(32, (kernel, kernel), padding='same'),
         BatchNormalization(),
         Activation('relu'),
-        Convolution2D(128, (kernel, kernel), padding='same'),
+        Convolution2D(32, (kernel, kernel), padding='same'),
         BatchNormalization(),
         Activation('relu'),
 
         UpSampling2D(), #128
-        Convolution2D(64, (kernel, kernel), padding='same'),
+        Convolution2D(16, (kernel, kernel), padding='same'),
         BatchNormalization(),
         Activation('relu'),
-        Convolution2D(64, (kernel, kernel), padding='same'),
+        Convolution2D(16, (kernel, kernel), padding='same'),
         BatchNormalization(),
         Activation('relu'),
-        Convolution2D(64, (kernel, kernel), padding='same'),
+        Convolution2D(16, (kernel, kernel), padding='same'),
         BatchNormalization(),
         Activation('relu'),
 
         UpSampling2D(size=(4,4)), #512
-        Convolution2D(16, (5,5), padding='same'),
+        Convolution2D(4, (5,5), padding='same'),
         BatchNormalization(),
         Activation('relu'),
-        Convolution2D(16, (5,5), padding='same'),
+        Convolution2D(4, (5,5), padding='same'),
         BatchNormalization(),
         Activation('relu'),
 
         UpSampling2D(size=(4,4)),  #2048
-        Convolution2D(4, (7,7), padding='same'),
+        Convolution2D(1, (7,7), padding='same'),
         BatchNormalization(),
         Activation('relu'),
         Convolution2D(n_labels, (1, 1), padding='valid'),
@@ -163,10 +163,10 @@ optimizer = SGD(lr=0.001, momentum=0.9, decay=0.0005, nesterov=False)
 segnet.compile(loss="categorical_crossentropy", optimizer=optimizer, metrics=['accuracy'])
 print 'Compiled: OK'
 split = 60 #use this many for training. Must be <= 396
-epochs = 1
+epochs = 3
 
 # # Train model or load weights
-history = segnet.fit(xdata[:split],ydata[:split], batch_size=4, epochs=epochs, verbose=1)
+history = segnet.fit(xdata[:split],ydata[:split], batch_size=1, epochs=epochs, verbose=1)
 segnet.save('ep{0}.h5'.format(epochs))
 # autoencoder.load_weights('model_5l_weight_ep50.hdf5')
 
@@ -177,11 +177,11 @@ segnet.save('ep{0}.h5'.format(epochs))
 #==============================================================================
 
 # # Test model
-score = segnet.evaluate(xdata[split:],ydata[split:], verbose=1)
+score = segnet.evaluate(xdata[split:],ydata[split:], batch_size=1, verbose=1)
 print 'Test score:', score[0]
 print 'Test accuracy:', score[1]
 
-output = segnet.predict_proba(xdata[split:], verbose=1)
+output = segnet.predict_proba(xdata[split:], batch_size=1, verbose=1)
 output = output.reshape((output.shape[0], img_h, img_w, n_labels))
 
 
