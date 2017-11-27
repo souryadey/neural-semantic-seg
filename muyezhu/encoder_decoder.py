@@ -1,4 +1,4 @@
-from dataset import Dataloader
+from dataset import DataLoader
 
 import numpy as np
 import os
@@ -15,7 +15,7 @@ class BasicED:
     """
     only tuned for (256, 256) dimensions images
     """
-    def __init__(self, N, H, W, n_labels=4, seg_method='auto',
+    def __init__(self, N, H, W, n_labels=3, seg_method='auto',
                  lr=0.001, lr_decay=0.9, n_epoch=10):
         self.N, self.H, self.W, = N, H, W
         self.lr = lr
@@ -41,6 +41,7 @@ class BasicED:
         self.save_dir = None
         self._model()
         self._init_ops()
+        self.trained, self.restored = False, False
 
     def _init_ops(self):
         self.segment_op = self._segment()
@@ -49,9 +50,10 @@ class BasicED:
         self.train_op = optimizer.minimize(self.loss_op)
 
     def _model(self):
-        # N * 256 * 256 * 1
+        n_filters = 16
+        # in: N * 256 * 256 * 1
         with tf.variable_scope('conv1'):
-            self.conv1 = tf.layers.conv2d(self.input, 8, (7, 7),
+            self.conv1 = tf.layers.conv2d(self.input, n_filters, (7, 7),
                                           padding='same', name='conv1',
                                           kernel_initializer=tf.contrib.layers.xavier_initializer(uniform=False))
             print(self.conv1.shape)
@@ -60,9 +62,10 @@ class BasicED:
             self.relu1 = tf.nn.relu(self.bn1)
             self.pool1 = tf.layers.max_pooling2d(self.relu1, (2, 2), (2, 2),
                                                  padding='same')
-        # N * 128 * 128 * 8
+        # in: N * 128 * 128 * 8
+        n_filters *= 2
         with tf.variable_scope('conv2'):
-            self.conv2 = tf.layers.conv2d(self.pool1, 16, (5, 5),
+            self.conv2 = tf.layers.conv2d(self.pool1, n_filters, (5, 5),
                                           padding='same', name='conv2',
                                           kernel_initializer=tf.contrib.layers.xavier_initializer(uniform=False))
             print(self.conv2.shape)
@@ -70,10 +73,10 @@ class BasicED:
                                                      training=self.is_train)
             self.relu2 = tf.nn.relu(self.bn2)
             self.pool2 = tf.layers.max_pooling2d(self.relu2, (2, 2), (2, 2), padding='same')
-            print(self.pool2.shape)
-        # N * 64 * 64 * 16
+        # in: N * 64 * 64 * 16
+        n_filters *= 2
         with tf.variable_scope('conv3'):
-            self.conv3 = tf.layers.conv2d(self.pool2, 32, (5, 5),
+            self.conv3 = tf.layers.conv2d(self.pool2, n_filters, (5, 5),
                                           padding='same', name='conv3',
                                           kernel_initializer=tf.contrib.layers.xavier_initializer(uniform=False))
             print(self.conv3.shape)
@@ -81,9 +84,10 @@ class BasicED:
                                                      training=self.is_train)
             self.relu3 = tf.nn.relu(self.bn3)
             self.pool3 = tf.layers.max_pooling2d(self.relu3, (2, 2), (2, 2), padding='same')
-        # N * 32 * 32 * 32
+        # in: N * 32 * 32 * 32
+        n_filters *= 2
         with tf.variable_scope('conv4'):
-            self.conv4 = tf.layers.conv2d(self.pool3, 64, (3, 3),
+            self.conv4 = tf.layers.conv2d(self.pool3, n_filters, (3, 3),
                                           padding='same', name='conv4',
                                           kernel_initializer=tf.contrib.layers.xavier_initializer(uniform=False))
             print(self.conv4.shape)
@@ -91,9 +95,10 @@ class BasicED:
                                                      training=self.is_train)
             self.relu4 = tf.nn.relu(self.bn4)
             self.pool4 = tf.layers.max_pooling2d(self.relu4, (2, 2), (2, 2), padding='same')
-        # N * 16 * 16 * 64
+        # in: N * 16 * 16 * 64
+        n_filters *= 2
         with tf.variable_scope('conv5'):
-            self.conv5 = tf.layers.conv2d(self.pool4, 128, (3, 3),
+            self.conv5 = tf.layers.conv2d(self.pool4, n_filters, (3, 3),
                                           padding='same', name='conv5',
                                           kernel_initializer=tf.contrib.layers.xavier_initializer(uniform=False))
             print(self.conv5.shape)
@@ -101,19 +106,21 @@ class BasicED:
                                                      training=self.is_train)
             self.relu5 = tf.nn.relu(self.bn5)
             self.pool5 = tf.layers.max_pooling2d(self.relu5, (2, 2), (2, 2), padding='same')
-        # N * 8 * 8 * 128
+        # in: N * 8 * 8 * 128
+        n_filters *= 2
         with tf.variable_scope('conv6'):
-            self.conv6 = tf.layers.conv2d(self.pool5, 256, (3, 3),
+            self.conv6 = tf.layers.conv2d(self.pool5, n_filters, (3, 3),
                                           padding='same', name='conv6',
                                           kernel_initializer=tf.contrib.layers.xavier_initializer(uniform=False))
             print(self.conv6.shape)
             self.bn6 = tf.layers.batch_normalization(self.conv6, name='bn6',
                                                      training=self.is_train)
             self.relu6 = tf.nn.relu(self.bn6)
-        # N * 16 * 16 * 64
+        # out: N * 16 * 16 * 64
+        n_filters //= 2
         with tf.variable_scope('dconv1'):
-            self.dconv1 = tf.layers.conv2d_transpose(self.relu6, 128, (3, 3),
-                                                     strides=(2, 2),
+            self.dconv1 = tf.layers.conv2d_transpose(self.relu6, n_filters,
+                                                     (3, 3), strides=(2, 2),
                                                      padding='same',
                                                      name='dconv1',
                                                      kernel_initializer=tf.contrib.layers.xavier_initializer(uniform=False))
@@ -122,48 +129,56 @@ class BasicED:
                                                       training=self.is_train)
             self.drelu1 = tf.nn.relu(self.dbn1) + \
                           self.relu5 * self.conv_layer_weights['relu5']
-        # N * 32 * 32 * 32
+        # out: N * 32 * 32 * 32
+        n_filters //= 2
         with tf.variable_scope('dconv2'):
-            self.dconv2 = tf.layers.conv2d_transpose(self.drelu1, 64, (3, 3),
-                                                     strides=(2, 2),
+            self.dconv2 = tf.layers.conv2d_transpose(self.drelu1, n_filters,
+                                                     (3, 3), strides=(2, 2),
                                                      padding='same',
                                                      name='dconv2',
                                                      kernel_initializer=tf.contrib.layers.xavier_initializer(uniform=False))
+            print(self.dconv2.shape)
             self.dbn2 = tf.layers.batch_normalization(self.dconv2, name='dbn2',
                                                       training=self.is_train)
             self.drelu2 = tf.nn.relu(self.dbn2) + \
                           self.relu4 * self.conv_layer_weights['relu4']
-        # N * 64 * 64 * 16
+        # out: N * 64 * 64 * 16
+        n_filters //= 2
         with tf.variable_scope('dconv3'):
-            self.dconv3 = tf.layers.conv2d_transpose(self.drelu2, 32, (5, 5),
-                                                     strides=(2, 2),
+            self.dconv3 = tf.layers.conv2d_transpose(self.drelu2, n_filters,
+                                                     (5, 5), strides=(2, 2),
                                                      padding='same',
                                                      name='dconv3',
                                                      kernel_initializer=tf.contrib.layers.xavier_initializer(uniform=False))
+            print(self.dconv3.shape)
             self.dbn3 = tf.layers.batch_normalization(self.dconv3, name='dbn3',
                                                       training=self.is_train)
             self.drelu3 = tf.nn.relu(self.dbn3) + \
                           self.relu3 * self.conv_layer_weights['relu3']
 
-        # N * 128 * 128 * 8
+        # out: N * 128 * 128 * 8
+        n_filters //= 2
         with tf.variable_scope('dconv4'):
-            self.dconv4 = tf.layers.conv2d_transpose(self.drelu3, 16, (5, 5),
-                                                     strides=(2, 2),
+            self.dconv4 = tf.layers.conv2d_transpose(self.drelu3, n_filters,
+                                                     (5, 5), strides=(2, 2),
                                                      padding='same',
                                                      name='dconv4',
                                                      kernel_initializer=tf.contrib.layers.xavier_initializer(uniform=False))
+            print(self.dconv4.shape)
             self.dbn4 = tf.layers.batch_normalization(self.dconv4, name='dbn4',
                                                       training=self.is_train)
             self.drelu4 = tf.nn.relu(self.dbn4) + \
                           self.relu2 * self.conv_layer_weights['relu2']
 
-        # N * 256 * 256 * 1
+        # out: N * 256 * 256 * 1
+        n_filters //= 2
         with tf.variable_scope('dconv5'):
-            self.dconv5 = tf.layers.conv2d_transpose(self.drelu4, 8, (7, 7),
-                                                     strides=(2, 2),
+            self.dconv5 = tf.layers.conv2d_transpose(self.drelu4, n_filters,
+                                                     (7, 7), strides=(2, 2),
                                                      padding='same',
                                                      name='dconv5',
                                                      kernel_initializer=tf.contrib.layers.xavier_initializer(uniform=False))
+            print(self.dconv5.shape)
             self.dbn5 = tf.layers.batch_normalization(self.dconv5, name='dbn5',
                                                       training=self.is_train)
             self.drelu5 = tf.nn.relu(self.dbn5) + \
@@ -193,8 +208,19 @@ class BasicED:
         classes = tf.argmax(activation, axis=1)
         return tf.reshape(classes, (self.N, self.H, self.W, -1))
 
+    def _preprocess(self, data):
+        if not data.shape == (self.N, self.H, self.W, 1):
+            raise ValueError('data should be a numpy array of dimensions '
+                             '({}, {}, {}, 1)'
+                             .format(self.N, self.H, self.W, 1))
+        data = data.reshape((self.N, -1))
+        data = data - np.mean(data, axis=0)
+        data /= 255
+        data = data.reshape((self.N, self.H, self.W, 1))
+        return data
+
     def train(self, session):
-        loader = Dataloader(mode='train',
+        loader = DataLoader(mode='train',
                             seg_method=self.seg_method,
                             n_class=self.n_labels)
         n_samples = loader.num_samples(self.H, self.W)
@@ -204,10 +230,7 @@ class BasicED:
                 data, label = loader.load_data(self.N, self.H, self.W,
                                                mode='train',
                                                seg_method=self.seg_method)
-                data = data.reshape((self.N, -1))
-                data = data - np.mean(data, axis=0)
-                data /= 255
-                data = data.reshape((self.N, self.H, self.W, 1))
+                data = self._preprocess(data)
                 feed_dict = {self.input: data,
                              self.label: label,
                              self.is_train: True}
@@ -222,16 +245,17 @@ class BasicED:
                     print('Iteration {}: output segment result'.format(self.steps))
                     self.save_train_imgs(data, label, segmented)
                     self.save_model()
+        self.trained = True
+        self.restored = False
 
     def test(self, session):
-        loader = Dataloader(mode='test')
+        if not self.trained and not self.restored:
+            raise ValueError('model is neither trained nor restored')
+        loader = DataLoader(mode='test')
         n_samples = loader.num_samples(self.H, self.W)
         for i in range(n_samples // self.N):
             data = loader.load_data(self.N, self.H, self.W, mode='test')
-            data = data.reshape((self.N, -1))
-            data = data - np.mean(data, axis=0)
-            data /= 255
-            data = data.reshape((self.N, self.H, self.W, 1))
+            data = self._preprocess(data)
             # self.is_train here is not typo. setting it to False produces
             # all black output, possibly because each batch has only 2
             # distinct images and 6 rotated versions
@@ -240,6 +264,18 @@ class BasicED:
             segmented = session.run([self.segment_op], feed_dict=feed_dict)
             print('test batch {0}'.format(i))
             self.save_test_imgs(data, segmented[0], i)
+
+    def segment_imgs(self, session, imgs):
+        if not self.trained and not self.restored:
+            raise ValueError('model is neither trained nor restored')
+        if not imgs.shape == (self.N, self.H, self.W, 1):
+            raise ValueError('imgs should be a numpy array of dimensions '
+                             '({}, {}, {}, 1)'
+                             .format(self.N, self.H, self.W, 1))
+        imgs = self._preprocess(imgs)
+        feed_dict = {self.input: imgs, self.is_train: True}
+        segmented = session.run([self.segment_op], feed_dict=feed_dict)
+        return segmented[0]
 
     def save_train_imgs(self, data, labels, segmented):
         out_dir = os.path.join(self.get_save_dir(), 'train')
@@ -291,10 +327,18 @@ class BasicED:
                     copy(f, os.path.join(self.get_save_dir(), os.path.basename(f)))
                     print('save source file: {}'.format(f))
 
-with tf.Session() as sess:
-    ed = BasicED(8, 256, 256, n_labels=3, seg_method='manual', n_epoch=40)
-    sess.run(tf.global_variables_initializer())
-    with tf.device('/gpu:0'):
-        ed.train(sess)
-        ed.test(sess)
-    ed.save_model()
+    def restore_model(self, session, model_path):
+        saver = tf.train.Saver()
+        saver.restore(session, model_path)
+        self.trained = False
+        self.restored = True
+
+
+if __name__ == '__main__':
+    with tf.Session() as sess:
+        ed = BasicED(8, 256, 256, n_labels=3, seg_method='manual', n_epoch=40)
+        sess.run(tf.global_variables_initializer())
+        with tf.device('/gpu:0'):
+            ed.train(sess)
+            ed.test(sess)
+        ed.save_model()
