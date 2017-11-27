@@ -239,8 +239,8 @@ def eval_segm(group='training'):
     basiced_dir = os.path.join(eval_dir, 'basic_ed')
     trad_eval = np.zeros((len(os.listdir(trad_dir)), 4))
     seg_eval = np.zeros((len(os.listdir(trad_dir)), 4))
-    if os.path.isfile(os.path.join(eval_dir, 'results')):
-        os.remove(os.path.join(eval_dir, 'results'))
+    if os.path.isfile(os.path.join(eval_dir, 'eval_{}'.format(group))):
+        os.remove(os.path.join(eval_dir, 'eval_{}'.format(group)))
     for i, trad_name in enumerate(os.listdir(trad_dir)):
         m = re.match(xyz_pattern, trad_name)
         if m is None:
@@ -257,7 +257,7 @@ def eval_segm(group='training'):
         seg_eval[i, 1] = mean_accuracy(seg, gt)
         seg_eval[i, 2] = mean_IU(seg, gt)
         seg_eval[i, 3] = frequency_weighted_IU(seg, gt)
-        with open(os.path.join(eval_dir, 'results'), 'a+') as f:
+        with open(os.path.join(eval_dir, 'eval_{}'.format(group)), 'a+') as f:
             f.write('{}.tif:\n'.format(xyz))
             f.write('traditional method:\n')
             f.write('pixel accuracy = {}\n'.format(trad_eval[i, 0]))
@@ -269,18 +269,18 @@ def eval_segm(group='training'):
             f.write('mean accuracy = {}\n'.format(seg_eval[i, 1]))
             f.write('mean IU = {}\n'.format(seg_eval[i, 2]))
             f.write('frequency weighted IU = {}\n'.format(seg_eval[i, 3]))
-    with open(os.path.join(eval_dir, 'results'), 'a+') as f:
+    with open(os.path.join(eval_dir, 'eval_{}'.format(group)), 'a+') as f:
         f.write('overall:\n')
         f.write('traditional method:\n')
-        f.write('pixel accuracy = {}\n'.format(np.mean(trad_eval[0, :])))
-        f.write('mean accuracy = {}\n'.format(np.mean(trad_eval[1, :])))
-        f.write('mean IU = {}\n'.format(np.mean(trad_eval[2, :])))
-        f.write('frequency weighted IU = {}\n'.format(np.mean(trad_eval[3, :])))
+        f.write('pixel accuracy = {}\n'.format(np.mean(trad_eval[:, 0])))
+        f.write('mean accuracy = {}\n'.format(np.mean(trad_eval[:, 1])))
+        f.write('mean IU = {}\n'.format(np.mean(trad_eval[:, 2])))
+        f.write('frequency weighted IU = {}\n'.format(np.mean(trad_eval[:, 3])))
         f.write('encoder decoder:\n')
-        f.write('pixel accuracy = {}\n'.format(np.mean(seg_eval[0, :])))
-        f.write('mean accuracy = {}\n'.format(np.mean(seg_eval[1, :])))
-        f.write('mean IU = {}\n'.format(np.mean(seg_eval[2, :])))
-        f.write('frequency weighted IU = {}\n'.format(np.mean(seg_eval[3, :])))
+        f.write('pixel accuracy = {}\n'.format(np.mean(seg_eval[:, 0])))
+        f.write('mean accuracy = {}\n'.format(np.mean(seg_eval[:, 1])))
+        f.write('mean IU = {}\n'.format(np.mean(seg_eval[:, 2])))
+        f.write('frequency weighted IU = {}\n'.format(np.mean(seg_eval[:, 3])))
 
 
 if __name__ == '__main__':
