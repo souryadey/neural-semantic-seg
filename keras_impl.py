@@ -186,5 +186,3 @@ for i in xrange(10):
 # output = output.reshape((output.shape[0], img_h, img_w, n_labels))
 #==============================================================================
 
-
-
