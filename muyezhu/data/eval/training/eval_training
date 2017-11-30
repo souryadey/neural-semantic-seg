@@ -1,0 +1,154 @@
+Z70_x8192_y16384.tif:
+traditional method:
+pixel accuracy = 0.985643386841
+mean accuracy = 0.872245337659
+mean IU = 0.490281385454
+frequency weighted IU = 0.982537076569
+encoder decoder:
+pixel accuracy = 0.99267244339
+mean accuracy = 0.959870882661
+mean IU = 0.650026535217
+frequency weighted IU = 0.990777242748
+Z70_x12288_y22528.tif:
+traditional method:
+pixel accuracy = 0.983752727509
+mean accuracy = 0.882538946711
+mean IU = 0.602057247515
+frequency weighted IU = 0.980275612277
+encoder decoder:
+pixel accuracy = 0.989269018173
+mean accuracy = 0.966242929159
+mean IU = 0.659596665517
+frequency weighted IU = 0.986359638682
+Z70_x8192_y12288.tif:
+traditional method:
+pixel accuracy = 0.978139400482
+mean accuracy = 0.769094139883
+mean IU = 0.528817188558
+frequency weighted IU = 0.967978360993
+encoder decoder:
+pixel accuracy = 0.984044551849
+mean accuracy = 0.900291863289
+mean IU = 0.623079078716
+frequency weighted IU = 0.975611804984
+Z70_x6144_y8192.tif:
+traditional method:
+pixel accuracy = 0.986301660538
+mean accuracy = 0.721752203351
+mean IU = 0.672470705127
+frequency weighted IU = 0.976212720219
+encoder decoder:
+pixel accuracy = 0.991721868515
+mean accuracy = 0.809814126306
+mean IU = 0.777156107135
+frequency weighted IU = 0.984151562096
+Z70_x12288_y14336.tif:
+traditional method:
+pixel accuracy = 0.952147960663
+mean accuracy = 0.73067307449
+mean IU = 0.497501382895
+frequency weighted IU = 0.9322583251
+encoder decoder:
+pixel accuracy = 0.970790147781
+mean accuracy = 0.67977009229
+mean IU = 0.561196561305
+frequency weighted IU = 0.952187850767
+Z70_x10240_y12288.tif:
+traditional method:
+pixel accuracy = 0.971390724182
+mean accuracy = 0.751462155887
+mean IU = 0.5592171572
+frequency weighted IU = 0.953543362214
+encoder decoder:
+pixel accuracy = 0.981240510941
+mean accuracy = 0.808060336624
+mean IU = 0.678400562774
+frequency weighted IU = 0.967298259861
+Z70_x16384_y22528.tif:
+traditional method:
+pixel accuracy = 0.982365369797
+mean accuracy = 0.871266109627
+mean IU = 0.574324146762
+frequency weighted IU = 0.977429249735
+encoder decoder:
+pixel accuracy = 0.99024438858
+mean accuracy = 0.962243457101
+mean IU = 0.688804221159
+frequency weighted IU = 0.98678265943
+Z70_x10240_y20480.tif:
+traditional method:
+pixel accuracy = 0.98301410675
+mean accuracy = 0.859845059161
+mean IU = 0.658538744186
+frequency weighted IU = 0.974159281816
+encoder decoder:
+pixel accuracy = 0.991380929947
+mean accuracy = 0.914828595732
+mean IU = 0.773961968819
+frequency weighted IU = 0.985239331414
+Z50_x14336_y22528.tif:
+traditional method:
+pixel accuracy = 0.978879213333
+mean accuracy = 0.918467514958
+mean IU = 0.560832675064
+frequency weighted IU = 0.974276727578
+encoder decoder:
+pixel accuracy = 0.988961219788
+mean accuracy = 0.965896574462
+mean IU = 0.656700380689
+frequency weighted IU = 0.985360728095
+Z70_x14336_y22528.tif:
+traditional method:
+pixel accuracy = 0.980572223663
+mean accuracy = 0.748762326494
+mean IU = 0.631997149903
+frequency weighted IU = 0.967079055126
+encoder decoder:
+pixel accuracy = 0.988563776016
+mean accuracy = 0.82688705491
+mean IU = 0.776211448929
+frequency weighted IU = 0.9783329028
+Z50_x12288_y22528.tif:
+traditional method:
+pixel accuracy = 0.982784509659
+mean accuracy = 0.922638088192
+mean IU = 0.534497814724
+frequency weighted IU = 0.981214574637
+encoder decoder:
+pixel accuracy = 0.991520643234
+mean accuracy = 0.970467992018
+mean IU = 0.576996122185
+frequency weighted IU = 0.99007870345
+Z70_x8192_y22528.tif:
+traditional method:
+pixel accuracy = 0.988240480423
+mean accuracy = 0.821802032195
+mean IU = 0.512464437809
+frequency weighted IU = 0.985494562495
+encoder decoder:
+pixel accuracy = 0.993318796158
+mean accuracy = 0.96579865211
+mean IU = 0.679970559052
+frequency weighted IU = 0.991237647925
+Z70_x16384_y6144.tif:
+traditional method:
+pixel accuracy = 0.976529121399
+mean accuracy = 0.811751864515
+mean IU = 0.577444973587
+frequency weighted IU = 0.964604934175
+encoder decoder:
+pixel accuracy = 0.987071037292
+mean accuracy = 0.797224709544
+mean IU = 0.660831219668
+frequency weighted IU = 0.978291828837
+overall:
+traditional method:
+pixel accuracy = 0.979212375788
+mean accuracy = 0.821715296394
+mean IU = 0.569265000676
+frequency weighted IU = 0.970543372533
+encoder decoder:
+pixel accuracy = 0.987753794743
+mean accuracy = 0.886722866631
+mean IU = 0.674071648551
+frequency weighted IU = 0.980900781622

@@ -13,7 +13,7 @@ RAW_IMG_DIR = '/media/muyezhu/Dima/project_files/AKO_TIFF/' \
 BOUNDARY_WIDTH = 2
 
 
-class Dataloader:
+class DataLoader:
     """
     load [H, W] sized crops from 2048 * 2048 images
     """
@@ -199,12 +199,92 @@ class Dataloader:
         return data_batch
 
 
+class PatchExtractor:
+    def __init__(self, N, H, W, z_start=0, z_end=-1):
+        """
+        extract patches from img_paths[z_start: z_end)
+        shape should be (N, H, W, 1)
+        Args:
+            z_start:
+            z_end:
+
+        Returns:
+
+        """
+        self.fullsize_dir = '/media/muyezhu/Dima/project_files/AKO_TIFF' \
+                            '/AKO_04_03_P42_X30_01.vsi.Collection/Layer0'
+        self.N, self.H, self.W = N, H, W
+        self.zcur, self.xcur, self.ycur = 0, 0, 0
+        self.z_start, self.z_end = z_start, z_end
+        self.img_height, self.img_width = 0, 0
+        self.img = None
+        self.patches = np.zeros((self.N, self.H, self.W, 1), dtype=np.uint8)
+        self.patches_xyz = []
+        self.img_names = []
+        self._build_img_names()
+
+    def _build_img_names(self):
+        for name in os.listdir(self.fullsize_dir):
+            if not os.path.isfile(os.path.join(self.fullsize_dir, name)) or \
+               name.find('.tif') < 0:
+                continue
+            self.img_names.append(name)
+        self.img_names.sort()
+        if self.z_end < 0:
+            self.z_end = len(self.img_names)
+        if self.z_start < 0:
+            self.z_start = 0
+        if self.z_start >= self.z_end:
+            raise ValueError('empty img names list from provided z values')
+        self.zcur = self.z_start
+
+    def next_batch(self):
+        if self.zcur == self.z_end:
+            return 0, None
+        n_extracted = 0
+        patch = np.zeros((self.H, self.W), dtype=np.uint8)
+        self.patches_xyz = []
+        while n_extracted < self.N:
+            if self.xcur == 0 and self.ycur == 0:
+                print(os.path.join(self.fullsize_dir, self.img_names[self.zcur]))
+                self.img = scipy.misc.imread(
+                    os.path.join(self.fullsize_dir, self.img_names[self.zcur]),
+                    mode='L')
+                self.img = np.invert(self.img)
+                self.img_height = self.img.shape[0]
+                self.img_width = self.img.shape[1]
+            wmax = np.minimum(self.img_width, (self.xcur + 1) * self.W)
+            hmax = np.minimum(self.img_height, (self.ycur + 1) * self.H)
+            patch[0: hmax - self.ycur * self.H,
+                  0: wmax - self.xcur * self.W] = \
+                self.img[self.ycur * self.H: hmax, self.xcur * self.W: wmax]
+            patch = patch.reshape((self.H, self.W, 1))
+            self.patches[n_extracted, ...] = patch
+            patch = patch.reshape((self.H, self.W))
+            self.patches_xyz.append((self.xcur * self.W,
+                                     self.ycur * self.H,
+                                     self.zcur))
+            n_extracted += 1
+            self.xcur += 1
+            if self.xcur > self.img_width // self.W:
+                self.xcur = 0
+                self.ycur += 1
+                if self.ycur > self.img_height // self.H:
+                    self.ycur = 0
+                    self.zcur += 1
+                    if self.zcur == self.z_end:
+                        break
+        return n_extracted, self.patches
+
+
 def gen_image_tiles(img_path):
-    manual_dir = '/projects/courses/deep_learning/project/data/manual'
+    manual_dir = os.path.join(
+            os.path.dirname(os.path.realpath(__file__)), 'data', 'manual')
     if not os.path.isfile(img_path):
         raise ValueError("{} does not exist".format(img_path))
     slide_name = os.path.basename(os.path.dirname(os.path.dirname(img_path)))
-    slide_name = slide_name.replace('AKO_', '').replace('_P42_X30_01.vsi.Collection', '')
+    slide_name = slide_name.replace('AKO_', '')\
+                           .replace('_P42_X30_01.vsi.Collection', '')
     slide_dir = os.path.join(manual_dir, slide_name)
     print(slide_dir)
     if not os.path.isdir(slide_dir):
@@ -217,7 +297,9 @@ def gen_image_tiles(img_path):
                 t = I[i * TILE_L: (i + 1) * TILE_L,
                       j * TILE_L: (j + 1) * TILE_L]
                 t = 255 - t
-                t_name = os.path.basename(img_path).replace('.tif', '_x{}_y{}.tif'.format(j * TILE_L, i * TILE_L))
+                t_name = os.path.basename(img_path) \
+                           .replace('.tif', '_x{}_y{}.tif'
+                                    .format(j * TILE_L, i * TILE_L))
                 cv2.imwrite(os.path.join(slide_dir, t_name), t)
 
 
@@ -237,7 +319,8 @@ def _gen_4class_label(annotate3_dir, annotate4_dir):
 def gen_4class_label(src='train'):
     if not src == 'train' and not src == 'test' and not src == 'manual':
         raise ValueError('src label should come from train, test or manual set')
-    data_dir = '/projects/courses/deep_learning/project/data'
+    data_dir = os.path.join(
+            os.path.dirname(os.path.realpath(__file__)), 'data')
     src_dir = os.path.join(data_dir, src)
     if src == 'train' or src == 'test':
         for crop_folder in os.listdir(src_dir):
@@ -264,13 +347,16 @@ def gen_4class_label(src='train'):
         _gen_4class_label(annotate3_dir, annotate4_dir)
 
 
-def gen_manual_label():
-    data_dir = '/projects/courses/deep_learning/project/data'
+def gen_manual_label(group=None):
+    data_dir = os.path.join(
+            os.path.dirname(os.path.realpath(__file__)), 'data')
     src_dir = os.path.join(data_dir, 'manual')
     for d in os.listdir(src_dir):
         if d.find('_manual') > 0:
             src_dir = os.path.join(src_dir, d)
             break
+    if group == 'holdout':
+        src_dir = os.path.join(src_dir, group)
     annotate3_dir = os.path.join(src_dir, 'annotate_3')
     if not os.path.isdir(annotate3_dir):
         os.makedirs(annotate3_dir)
@@ -283,8 +369,8 @@ def gen_manual_label():
         img = cv2.imread(os.path.join(src_dir, img_name), -1)
         label3 = np.zeros(shape=(img.shape[0], img.shape[1]), dtype=np.uint8)
         # BGR
-        label3[np.logical_and.reduce([img[:, :, 1] > 0, img[:, :, 0] == 0, img[:, :, 2] == 0])] = 1
-        label3[np.logical_and.reduce([img[:, :, 2] > 0, img[:, :, 0] == 0, img[:, :, 1] == 0])] = 2
+        label3[np.logical_and.reduce([img[:, :, 1] > 230, img[:, :, 1] > img[:, :, 0], img[:, :, 1] > img[:, :, 2]])] = 1
+        label3[np.logical_and.reduce([img[:, :, 2] > 230, img[:, :, 2] > img[:, :, 0], img[:, :, 2] > img[:, :, 1]])] = 2
         cv2.imwrite(os.path.join(annotate3_dir, img_name), label3)
     gen_4class_label(src='manual')
 
@@ -292,4 +378,4 @@ def gen_manual_label():
 if __name__ == '__main__':
     # gen_image_tiles(os.path.join(RAW_IMG_DIR, 'Z20.tif'))
     # gen_4class_label()
-    gen_manual_label()
+    gen_manual_label(group='holdout')
